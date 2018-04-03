@@ -72,7 +72,7 @@ class App < Sinatra::Application
                 str += ` <strong>Person:</strong><span>${json.decrypted.person.id}</span>`;
               }
 
-              window.parent.postMessage({event: "insertHtml", html: `<span>${str}</span>`, nonce: json.decrypted.nonce}, "*");
+              window.parent.postMessage({event: "insertHtml", html: `<span>${str}</span>`, nonce: json.decrypted.nonce}, json.decrypted.origin);
               return false;
             };
           </script>
@@ -100,6 +100,7 @@ class App < Sinatra::Application
     integration_id = params.fetch(:integration_id)
     id = params.fetch(:id)
     nonce = params.fetch(:nonce)
+    origin = params.fetch(:origin)
     store = YAML::Store.new "credentials.store.#{tenant_id}.#{integration_id}"
     token = Token.new(store).access_token
     api = SimpleApi.new(access_token: token)
@@ -115,7 +116,7 @@ class App < Sinatra::Application
         <pre>#{result.to_json}</pre>
 
         <script type="text/javascript">
-          window.parent.postMessage({event: "completedAction", actionId: #{id}, nonce: '#{nonce}'}, "*");
+          window.parent.postMessage({event: "completedAction", actionId: #{id}, nonce: '#{nonce}'}, "#{origin}");
         </script>
       </body>
     </html>
