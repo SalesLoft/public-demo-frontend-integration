@@ -6,8 +6,11 @@ require_relative 'lib/secrets'
 require_relative 'lib/urls'
 require_relative 'lib/token'
 require_relative 'lib/simple_api'
+require_relative 'lib/store'
 
 Dotenv.load
+
+STORE_CLASS = Store::Yaml
 
 class App < Sinatra::Application
   configure do
@@ -39,8 +42,8 @@ class App < Sinatra::Application
   post '/portal/echo' do
     tenant_id = request.params["tenant_id"]
     integration_id = request.params["integration_id"]
-    store = YAML::Store.new "credentials.store.#{tenant_id}.#{integration_id}"
-    secret = store.transaction { store[:secret] }
+    store = STORE_CLASS.new(tenant_id, integration_id)
+    secret = store.get_property(:secret)
     jwk = JOSE::JWK.from_oct(Digest::SHA256.digest(secret))
     payload = jwk.block_decrypt(request.params["payload"])[0]
     decrypted = JSON.parse(payload)
@@ -102,7 +105,7 @@ class App < Sinatra::Application
     id = params.fetch(:id)
     nonce = params.fetch(:nonce)
     origin = params.fetch(:origin)
-    store = YAML::Store.new "credentials.store.#{tenant_id}.#{integration_id}"
+    store = STORE_CLASS.new(tenant_id, integration_id)
     token = Token.new(store).access_token
     api = SimpleApi.new(access_token: token)
 
@@ -130,11 +133,9 @@ class App < Sinatra::Application
     credentials = request.env['omniauth.auth'][:credentials]
     tenant_id = request.env['omniauth.strategy'].access_token["tenant_id"]
     integration_id = request.env['omniauth.strategy'].access_token["integration_id"]
-    store = YAML::Store.new "credentials.store.#{tenant_id}.#{integration_id}"
-    store.transaction do
-      store[:credentials] = credentials.to_h
-      store[:secret] = request.env['omniauth.strategy'].access_token["secret"]
-    end
+    store = STORE_CLASS.new(tenant_id, integration_id)
+    store.save_credentials!(credentials)
+    store.save_secret!(request.env['omniauth.strategy'].access_token["secret"])
 
     origin = request.env['omniauth.origin']
     redirect origin.nil? ? '/success' : origin
