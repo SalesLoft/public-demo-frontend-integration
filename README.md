@@ -20,7 +20,7 @@ the App Portal.
 1. Copy `.env.sample` to `.env`
 2. Fill out the id / secret with your information from App Portal
 3. bundle install
-4. bundle exec foreman start
+4. bundle exec foreman start -f Procfile.local
 5. Go to https://localhost:8444 and accept the insecure certificate
 6. Go to https://app.salesloft.com/app/settings/integrations and enable the integration
 7. The different integration points will now become available for demo
