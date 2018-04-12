@@ -44,13 +44,14 @@ class App < Sinatra::Application
     jwk = JOSE::JWK.from_oct(Digest::SHA256.digest(secret))
     payload = jwk.block_decrypt(request.params["payload"])[0]
     decrypted = JSON.parse(payload)
+    origin = decrypted.fetch("origin")
 
     button = ""
     if id = decrypted.dig("action", "id")
       nonce = decrypted.fetch("nonce")
       button = <<-HTML
       <div>
-        <a href="/#{tenant_id}/#{integration_id}/complete/action/#{id}/#{nonce}">Complete Action</a>
+        <a href="/#{tenant_id}/#{integration_id}/complete/action/#{id}/#{nonce}?origin=#{origin}">Complete Action</a>
       </div>
       HTML
     end
