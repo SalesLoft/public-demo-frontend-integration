@@ -63,12 +63,17 @@ class App < Sinatra::Application
       HTML
     end
 
+    insert_html = ""
+    if request.params["type"] && request.params["type"] == "email_editor"
+      insert_html = "<p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>"
+    end
+
     <<-HTML
       <html>
         <body>
           #{button}
           <p><a href="/other">Other Page</a></p>
-          <p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>
+          #{insert_html}
           <pre>#{request.params.merge(decrypted: decrypted).to_json}</pre>
 
           <script type="text/javascript" src="/buttons.js"></script>
@@ -95,7 +100,6 @@ class App < Sinatra::Application
       <html>
         <body>
           <p>On the other page. There's nothing to do here.</p>
-          <p><a href="/">Back</a></p>
 
           <script type="text/javascript" src="/buttons.js"></script>
         </body>
