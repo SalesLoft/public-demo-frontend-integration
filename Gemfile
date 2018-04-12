@@ -14,3 +14,5 @@ gem "dotenv"
 gem "byebug"
 gem "activesupport"
 gem "jose"
+
+gem "redis"

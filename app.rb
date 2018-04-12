@@ -10,7 +10,11 @@ require_relative 'lib/store'
 
 Dotenv.load
 
-STORE_CLASS = Store::Yaml
+if !ENV["REDIS_URL"].nil?
+  STORE_CLASS = Store::Redis
+else
+  STORE_CLASS = Store::LocalYaml
+end
 
 class App < Sinatra::Application
   configure do

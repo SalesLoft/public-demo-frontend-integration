@@ -1,4 +1,4 @@
-class Store::Yaml
+class Store::LocalYaml
   def initialize(tenant_id, integration_id)
     @store = YAML::Store.new("credentials.store.#{tenant_id}.#{integration_id}")
   end
