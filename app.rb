@@ -65,7 +65,7 @@ class App < Sinatra::Application
 
     insert_html = ""
     if request.params["type"] && request.params["type"] == "email_editor"
-      insert_html = "<p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>"
+      insert_html = '<p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>'
     end
 
     <<-HTML
