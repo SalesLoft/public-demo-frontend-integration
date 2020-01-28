@@ -1,5 +1,5 @@
 class Secrets
-  def self.for_env(env = ENV.fetch("ENVIRONMENT", "production"))
+  def self.for_env(env = ENV.fetch("ENVIRONMENT", "qa1"))
     new(env)
   end
 

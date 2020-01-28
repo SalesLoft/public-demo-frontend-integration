@@ -30,6 +30,7 @@ GEM
     multi_xml (0.6.0)
     multipart-post (2.0.0)
     mustermann (1.0.2)
+    nio4r (2.5.2)
     oauth2 (1.4.0)
       faraday (>= 0.8, < 0.13)
       jwt (~> 1.0)
@@ -45,7 +46,8 @@ GEM
     omniauth-salesloft (1.0.0)
       omniauth (>= 1.1.1)
       omniauth-oauth2 (>= 1.3.1)
-    puma (2.12.2)
+    puma (4.3.0)
+      nio4r (~> 2.0)
     rack (2.0.4)
     rack-protection (2.0.1)
       rack
@@ -93,7 +95,7 @@ DEPENDENCIES
   jose
   omniauth
   omniauth-salesloft
-  puma (= 2.12.2)
+  puma (= 4.3)
   redis
   rspec
   sinatra

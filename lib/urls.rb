@@ -1,14 +1,26 @@
 class Urls
   ENVS = {
-    "production" => {
-      api_base: 'https://api.salesloft.com',
-      site: 'https://api.salesloft.com',
-      authorize_url: 'https://accounts.salesloft.com/oauth/authorize',
-      token_url: 'https://accounts.salesloft.com/oauth/token'
+    "qa1" => {
+      api_base: 'https://api.qasalesloft.com',
+      site: 'https://api.qasalesloft.com',
+      authorize_url: 'https://accounts.qasalesloft.com/oauth/authorize',
+      token_url: 'https://accounts.qasalesloft.com/oauth/token'
+    },
+    "qa2" => {
+      api_base: 'https://api2.qasalesloft.com',
+      site: 'https://api2.qasalesloft.com',
+      authorize_url: 'https://accounts2.qasalesloft.com/oauth/authorize',
+      token_url: 'https://accounts2.qasalesloft.com/oauth/token'
+    },
+    "dev" => {
+      api_base: 'https://localhost.salesloft.com:6443',
+      site: 'https://localhost.salesloft.com:6443',
+      authorize_url: 'https://localhost.salesloft.com:9898/oauth/authorize',
+      token_url: 'https://localhost.salesloft.com:9898/oauth/token'
     }
   }.freeze
 
-  def self.for_env(env = ENV.fetch("ENVIRONMENT", "production"))
+  def self.for_env(env = ENV.fetch("ENVIRONMENT", "qa1"))
     new(env)
   end
 

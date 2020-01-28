@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem "puma", "2.12.2"
+gem "puma", "4.3"
 gem "foreman"
 gem "sinatra", require: 'sinatra/base'
 gem "sinatra-contrib"
