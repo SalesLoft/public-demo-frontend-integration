@@ -12,6 +12,12 @@ class Urls
       authorize_url: 'https://accounts2.qasalesloft.com/oauth/authorize',
       token_url: 'https://accounts2.qasalesloft.com/oauth/token'
     },
+    "qa5" => {
+      api_base: 'https://api5.qasalesloft.com',
+      site: 'https://api5.qasalesloft.com',
+      authorize_url: 'https://accounts5.qasalesloft.com/oauth/authorize',
+      token_url: 'https://accounts5.qasalesloft.com/oauth/token'
+    },
     "dev" => {
       api_base: 'https://localhost.salesloft.com:6443',
       site: 'https://localhost.salesloft.com:6443',
