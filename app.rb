@@ -6,16 +6,10 @@ require_relative 'lib/secrets'
 require_relative 'lib/urls'
 require_relative 'lib/token'
 require_relative 'lib/simple_api'
-require_relative 'lib/store'
 
 Dotenv.load
 
-if !ENV["REDIS_URL"].nil?
-  STORE_CLASS = Store::Redis
-else
-  STORE_CLASS = Store::LocalYaml
-end
-
+# https://localhost:8444/auth/salesloft?return_to=https://www.google.com to simulate returning to a source
 class App < Sinatra::Application
   configure do
     urls = Urls.for_env
@@ -33,11 +27,38 @@ class App < Sinatra::Application
       origin_param: 'return_to' # support ?return_to=blah param
     end
 
+    # scopes = ["'websocket_tokens:create', 'people:create'"]
+
+    # use OmniAuth::Builder do
+    #   provider :salesloft, secrets.app_id, secrets.app_secret, scope: "websocket_tokens:create people:create",
+    #   client_options: {
+    #     site: urls.site_url,
+    #     authorize_url: urls.authorize_url,
+    #     token_url: urls.token_url
+    #   },
+    #   origin_param: 'return_to' # support ?return_to=blah param
+    # end
+
     set :protection, except: :frame_options
+  end
+
+  # Trigger the SalesLoft login manually for testing
+  get '/' do
+    <<-HTML
+      <a href='/auth/salesloft'>Sign in with SalesLoft</a>
+    HTML
   end
 
   get '/auth/failure' do
     request.inspect
+  end
+
+  get '/success' do
+    <<-HTML
+    Success!
+
+    <a href='/auth/salesloft'>Sign in with SalesLoft</a>
+    HTML
   end
 
   # Receives a POST from SalesLoft integrations with the tenant_id, integration_id, and encrypted payload.
@@ -46,26 +67,20 @@ class App < Sinatra::Application
   post '/portal/echo' do
     tenant_id = request.params["tenant_id"]
     integration_id = request.params["integration_id"]
-    store = STORE_CLASS.new(tenant_id, integration_id)
-    secret = store.get_property(:secret)
+    store = YAML::Store.new "credentials.store.#{tenant_id}.#{integration_id}"
+    secret = store.transaction { store[:secret] }
     jwk = JOSE::JWK.from_oct(Digest::SHA256.digest(secret))
     payload = jwk.block_decrypt(request.params["payload"])[0]
     decrypted = JSON.parse(payload)
-    origin = decrypted.fetch("origin")
 
     button = ""
     if id = decrypted.dig("action", "id")
       nonce = decrypted.fetch("nonce")
       button = <<-HTML
       <div>
-        <a href="/#{tenant_id}/#{integration_id}/complete/action/#{id}/#{nonce}?origin=#{origin}">Complete Action</a>
+        <a href="/#{tenant_id}/#{integration_id}/complete/action/#{id}/#{nonce}">Complete Action</a>
       </div>
       HTML
-    end
-
-    insert_html = ""
-    if request.params["type"] && request.params["type"] == "email_editor"
-      insert_html = '<p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>'
     end
 
     <<-HTML
@@ -73,21 +88,22 @@ class App < Sinatra::Application
         <body>
           #{button}
           <p><a href="/other">Other Page</a></p>
-          #{insert_html}
+          <p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>
           <pre>#{request.params.merge(decrypted: decrypted).to_json}</pre>
 
           <script type="text/javascript" src="/buttons.js"></script>
           <script type="text/javascript">
             window.json = #{request.params.merge(decrypted: decrypted).to_json}
             document.getElementById("insertSomeHtml").onclick = () => {
-              let str = "<strong>SalesLoft</strong><span> HTML demo</span>";
+              let str = "<strong>Steve is cool</strong>";
               if (json.decrypted.person) {
-                str += ` <strong>Person:</strong><span>${json.decrypted.person.id}</span>`;
+                str += `<strong>Person:</strong><span>${json.decrypted.person.id}</span>`;
               }
-
+              console.log("Inserting str", str);
               window.parent.postMessage({event: "insertHtml", html: `<span>${str}</span>`, nonce: json.decrypted.nonce}, json.decrypted.origin);
               return false;
             };
+            // window.parent.postMessage({event: "completedAction", actionId: json.decrypted.action.id, nonce: json.decrypted.nonce}, json.decrypted.origin)
           </script>
           <br>
         </body>
@@ -99,7 +115,7 @@ class App < Sinatra::Application
     <<-HTML
       <html>
         <body>
-          <p>On the other page. There's nothing to do here.</p>
+          On the other page
 
           <script type="text/javascript" src="/buttons.js"></script>
         </body>
@@ -111,13 +127,11 @@ class App < Sinatra::Application
     tenant_id = params.fetch(:tenant_id)
     integration_id = params.fetch(:integration_id)
     id = params.fetch(:id)
-    nonce = params.fetch(:nonce)
     origin = params.fetch(:origin)
-    store = STORE_CLASS.new(tenant_id, integration_id)
+    nonce = params.fetch(:nonce)
+    store = YAML::Store.new "credentials.store.#{tenant_id}.#{integration_id}"
     token = Token.new(store).access_token
     api = SimpleApi.new(access_token: token)
-
-    # The action must be completed through the API
     result = api.complete_action(id)
 
     <<-HTML
@@ -128,7 +142,7 @@ class App < Sinatra::Application
         <pre>#{result.to_json}</pre>
 
         <script type="text/javascript">
-          window.parent.postMessage({event: "completedAction", actionId: #{id}, nonce: '#{nonce}'}, "#{origin}");
+          window.parent.postMessage({event: "completedAction", actionId: #{id}, nonce: '#{nonce}'}, "#{origin}")
         </script>
       </body>
     </html>
@@ -141,9 +155,11 @@ class App < Sinatra::Application
     credentials = request.env['omniauth.auth'][:credentials]
     tenant_id = request.env['omniauth.strategy'].access_token["tenant_id"]
     integration_id = request.env['omniauth.strategy'].access_token["integration_id"]
-    store = STORE_CLASS.new(tenant_id, integration_id)
-    store.save_credentials!(credentials)
-    store.save_secret!(request.env['omniauth.strategy'].access_token["secret"])
+    store = YAML::Store.new "credentials.store.#{tenant_id}.#{integration_id}"
+    store.transaction do
+      store[:credentials] = credentials.to_h
+      store[:secret] = request.env['omniauth.strategy'].access_token["secret"]
+    end
 
     origin = request.env['omniauth.origin']
     redirect origin.nil? ? '/success' : origin
