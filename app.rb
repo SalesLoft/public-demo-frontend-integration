@@ -49,6 +49,7 @@ class App < Sinatra::Application
     integration_id = request.params["integration_id"]
     content_id = SecureRandom.uuid()
     store = STORE_CLASS.new(tenant_id, integration_id)
+    store.save_content_id!(content_id)
     secret = store.get_property(:secret)
     jwk = JOSE::JWK.from_oct(Digest::SHA256.digest(secret))
     payload = jwk.block_decrypt(request.params["payload"])[0]
