@@ -67,8 +67,7 @@ class App < Sinatra::Application
     end
 
     insert_html = '<p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>'
-    # metadata = "{\"time_added\": \"#{Time.now}\", \"additional_notes\": \"Some notes :)\"}"
-    metadata = ""
+    metadata = "{\"time_added\": \"#{Time.now}\", \"additional_notes\": \"Some notes :)\"}"
 
     <<-HTML
       <html>
