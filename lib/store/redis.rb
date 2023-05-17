@@ -17,8 +17,8 @@ class Store::Redis
     write_property!(:secret, secret)
   end
 
-  def save_content_id!(content_id)
-    write_property!(:content_id, content_id)
+  def save_unique_id!(unique_id)
+    write_property!(:unique_id, unique_id)
   end
 
   private
