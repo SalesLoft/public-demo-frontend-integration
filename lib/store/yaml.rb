@@ -15,6 +15,10 @@ class Store::LocalYaml
     write_property!(:secret, secret)
   end
 
+  def save_unique_id!(unique_id)
+    write_property!(:unique_id, unique_id)
+  end
+
   private
 
   def write_property!(property, value)

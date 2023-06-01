@@ -7,6 +7,7 @@ require_relative 'lib/urls'
 require_relative 'lib/token'
 require_relative 'lib/simple_api'
 require_relative 'lib/store'
+require 'securerandom'
 
 Dotenv.load
 
@@ -46,7 +47,9 @@ class App < Sinatra::Application
   post '/portal/echo' do
     tenant_id = request.params["tenant_id"]
     integration_id = request.params["integration_id"]
+    unique_id = SecureRandom.uuid()
     store = STORE_CLASS.new(tenant_id, integration_id)
+    store.save_unique_id!(unique_id)
     secret = store.get_property(:secret)
     jwk = JOSE::JWK.from_oct(Digest::SHA256.digest(secret))
     payload = jwk.block_decrypt(request.params["payload"])[0]
@@ -63,10 +66,8 @@ class App < Sinatra::Application
       HTML
     end
 
-    insert_html = ""
-    if request.params["type"] && request.params["type"] == "email_editor"
-      insert_html = '<p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>'
-    end
+    insert_html = '<p><a id="insertSomeHtml" href="#">Insert some HTML</a></p>'
+    metadata = "{\"time_added\": \"#{Time.now}\", \"additional_notes\": \"Some notes :)\"}"
 
     <<-HTML
       <html>
@@ -74,18 +75,18 @@ class App < Sinatra::Application
           #{button}
           <p><a href="/other">Other Page</a></p>
           #{insert_html}
-          <pre>#{request.params.merge(decrypted: decrypted).to_json}</pre>
+          <pre>#{request.params.merge(decrypted: decrypted, unique_id: unique_id, metadata: metadata).to_json}</pre>
 
           <script type="text/javascript" src="/buttons.js"></script>
           <script type="text/javascript">
-            window.json = #{request.params.merge(decrypted: decrypted).to_json}
+            window.json = #{request.params.merge(decrypted: decrypted, unique_id: unique_id, metadata: metadata).to_json}
             document.getElementById("insertSomeHtml").onclick = () => {
               let str = "<strong>SalesLoft</strong><span> HTML demo</span>";
               if (json.decrypted.person) {
                 str += ` <strong>Person:</strong><span>${json.decrypted.person.id}</span>`;
               }
 
-              window.parent.postMessage({event: "insertHtml", html: `<span>${str}</span>`, nonce: json.decrypted.nonce}, json.decrypted.origin);
+              window.parent.postMessage({event: "insertHtml", html: `<span>${str}</span>`, nonce: json.decrypted.nonce, unique_id: json.unique_id, integration_id: json.integration_id, metadata: json.metadata}, json.decrypted.origin);
               return false;
             };
           </script>

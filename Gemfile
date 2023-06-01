@@ -6,6 +6,7 @@ gem "sinatra", require: 'sinatra/base'
 gem "sinatra-contrib"
 gem "omniauth"
 gem "omniauth-salesloft"
+gem 'securerandom'
 
 gem "httparty"
 
