@@ -8,7 +8,7 @@ gem "omniauth"
 gem "omniauth-salesloft"
 gem 'securerandom'
 
-gem "httparty"
+gem "httparty", ">= 0.24.0"
 
 gem "rspec"
 gem "dotenv"
