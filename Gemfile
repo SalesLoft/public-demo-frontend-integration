@@ -13,7 +13,6 @@ gem "httparty", "~> 0.21"
 gem "rspec"
 gem "dotenv"
 gem "byebug", ">= 11.0"
-gem "activesupport"
 gem "jose"
 
 gem "redis"
